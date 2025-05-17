@@ -1,3 +1,12 @@
+chat:
+  description: >
+    Engage in a conversational dialog with the user, assisting general contractors
+    with procurement inquiries and general guidance.
+  expected_output: >
+    A natural language response addressing the user's question,
+    clarifying requirements or suggesting next steps in the procurement process.
+  agent: order_manager
+
 # Task to collect supplier data from various sources
 collect_supplier_data:
   description: >
