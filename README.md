@@ -52,3 +52,10 @@ For support, questions, or feedback regarding the SnapProcure Crew or crewAI.
 - [Chat with our docs](https://chatg.pt/DWjSBZn)
 
 Let's create wonders together with the power and simplicity of crewAI.
+
+## Running the Streamlit App
+
+```bash
+streamlit run app.py
+```
+
