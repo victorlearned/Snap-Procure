@@ -1,17 +1,67 @@
-research_task:
+# Task to collect supplier data from various sources
+collect_supplier_data:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
+    Search for {product} on various home improvement store websites.
+    Extract product details including price, brand, specifications, availability, and delivery options.
+    Focus on major retailers like Home Depot and Lowe's.
+    
+    IMPORTANT: Always include direct links to each product page for verification and purchase.
+    For each product, ensure the URL is a complete, clickable link that goes directly to the product page.
   expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    A structured list of product options with details including:
+    - Product name and description
+    - Direct URL to the product page (must be a complete, clickable link)
+    - Price and any available discounts
+    - Brand and specifications
+    - Stock availability
+    - Delivery options with dates and prices
+    - Store/seller information
+    
+    Example format for each product:
+    ```
+    - name: "2x4x8 Pressure Treated Lumber"
+      url: "https://www.homedepot.com/p/2x4x8-Pressure-Treated-Lumber-12345678"
+      price: "$5.47"
+      ...
+    ```
+  agent: data_collector
 
-reporting_task:
+# Task to analyze and compare the collected data
+analyze_suppliers:
   description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    Analyze the collected product data and rank options based on price, availability, specifications,
+    and delivery speed. Consider the quantity needed: {quantity}.
+    
+    For each product, include:
+    - Total cost (unit price * quantity + delivery fees)
+    - Estimated delivery date range
+    - Delivery speed (same day, next day, 2-day, standard, etc.)
+    - Any delivery restrictions or requirements
+    
+    Group results by delivery speed to show options for different urgency levels.
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A ranked list of product options grouped by delivery speed (fastest first), with reasoning for each ranking.
+    Include total cost based on quantity needed and delivery fees.
+    Save the final analysis to a CSV file for record keeping.
+  agent: procurement_analyst
+
+# Task to generate a purchase recommendation
+generate_recommendation:
+  description: >
+    Based on the analysis, provide clear purchase recommendations for different delivery speed needs.
+    For each speed category (same day, next day, 2-day, standard), provide:
+    - The best option in terms of total cost
+    - Any trade-offs to consider
+    - Alternative options if the fastest option is significantly more expensive
+    
+    Consider cost-effectiveness, availability, delivery speed, and any special requirements.
+  expected_output: >
+    Clear purchase recommendations organized by delivery speed, with justifications.
+    Include:
+    1. Summary of best options by delivery speed
+    2. Detailed comparison of top choices
+    3. Potential issues or considerations for each option
+    4. Links to purchase pages
+    
+    Formatted as markdown with clear sections and tables for easy comparison.
+  agent: procurement_analyst
