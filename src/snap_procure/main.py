@@ -1,52 +1,46 @@
 #!/usr/bin/env python
 import sys
-import warnings
-
+import os
 from datetime import datetime
-
 from snap_procure.crew import SnapProcure
-
-warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
-
-# This main file is intended to be a way for you to run your
-# crew locally, so refrain from adding unnecessary logic into this file.
-# Replace with inputs you want to test with, it will automatically
-# interpolate any tasks and agents information
 
 def run():
     """
-    Run the crew.
+    Run the procurement crew.
+    This is the main entry point for the CrewAI CLI.
     """
+    # Default values if not provided
+    product = os.environ.get('PRODUCT', '2x4x8 lumber')
+    quantity = int(os.environ.get('QUANTITY', 1))
+    max_delivery_days = int(os.environ.get('MAX_DELIVERY_DAYS', '7'))  # Default to 7 days
+
     inputs = {
-        'topic': 'AI LLMs',
-        'current_year': str(datetime.now().year)
+        'product': product,
+        'quantity': quantity,
+        'max_delivery_days': max_delivery_days,
+        'current_date': datetime.now().strftime('%Y-%m-%d')
     }
-    
+
+    print(f"\n🔍 Searching for: {quantity}x {product}")
+    print("This may take a minute...\n")
+
     try:
-        SnapProcure().crew().kickoff(inputs=inputs)
+        # Run the procurement workflow
+        result = SnapProcure().crew().kickoff(inputs=inputs)
+        print("\n✅ Procurement analysis complete!")
+        print(f"📄 Check the 'data' directory for the full report and recommendations.")
+        return result
     except Exception as e:
-        raise Exception(f"An error occurred while running the crew: {e}")
+        print(f"\n❌ An error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
 
-
-def train():
-    """
-    Train the crew for a given number of iterations.
-    """
-    inputs = {
-        "topic": "AI LLMs",
-        'current_year': str(datetime.now().year)
-    }
-    try:
-        SnapProcure().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
-
-    except Exception as e:
-        raise Exception(f"An error occurred while training the crew: {e}")
-
+# For backward compatibility
 def replay():
-    """
-    Replay the crew execution from a specific task.
-    """
+    """Replay the crew execution from a specific task."""
     try:
+        if len(sys.argv) < 2:
+            print("Please provide a task ID to replay")
+            sys.exit(1)
         SnapProcure().crew().replay(task_id=sys.argv[1])
 
     except Exception as e:
@@ -60,7 +54,7 @@ def test():
         "topic": "AI LLMs",
         "current_year": str(datetime.now().year)
     }
-    
+
     try:
         SnapProcure().crew().test(n_iterations=int(sys.argv[1]), eval_llm=sys.argv[2], inputs=inputs)
 

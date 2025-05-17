@@ -1,53 +1,96 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
-from typing import List
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+from typing import List, Dict, Any
+from snap_procure.tools.scraper import ProcurementScraper
+import pandas as pd
+import os
 
 @CrewBase
 class SnapProcure():
-    """SnapProcure crew"""
+    """
+    SnapProcure - A procurement assistant that helps find and compare
+    construction materials from various suppliers.
+    """
 
     agents: List[BaseAgent]
     tasks: List[Task]
+    scraper: ProcurementScraper = ProcurementScraper(output_dir='data')
 
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-    
-    # If you would like to add tools to your agents, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def researcher(self) -> Agent:
+    def data_collector(self) -> Agent:
+        """Agent responsible for collecting product data from various suppliers."""
         return Agent(
-            config=self.agents_config['researcher'], # type: ignore[index]
-            verbose=True
+            config=self.agents_config['data_collector'],
+            tools=[],  # Can add tools here if needed
+            verbose=True,
+            allow_delegation=False
         )
 
     @agent
-    def reporting_analyst(self) -> Agent:
+    def procurement_analyst(self) -> Agent:
+        """Agent responsible for analyzing product options and making recommendations."""
         return Agent(
-            config=self.agents_config['reporting_analyst'], # type: ignore[index]
-            verbose=True
-        )
-
-    # To learn more about structured task outputs,
-    # task dependencies, and task callbacks, check out the documentation:
-    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def research_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['research_task'], # type: ignore[index]
+            config=self.agents_config['procurement_analyst'],
+            verbose=True,
+            allow_delegation=False
         )
 
     @task
-    def reporting_task(self) -> Task:
+    def collect_supplier_data(self) -> Task:
+        """Task to collect product data from various suppliers."""
         return Task(
-            config=self.tasks_config['reporting_task'], # type: ignore[index]
-            output_file='report.md'
+            config=self.tasks_config['collect_supplier_data'],
+            agent=self.data_collector(),
+            output_file='data/raw_products.json',
+            callback=self._scrape_products
         )
+
+    @task
+    def analyze_suppliers(self) -> Task:
+        """Task to analyze and compare products from different suppliers."""
+        return Task(
+            config=self.tasks_config['analyze_suppliers'],
+            agent=self.procurement_analyst(),
+            context=[self.collect_supplier_data()],
+            output_file='data/analysis_report.md'
+        )
+
+    @task
+    def generate_recommendation(self) -> Task:
+        """Task to generate a final purchase recommendation."""
+        return Task(
+            config=self.tasks_config['generate_recommendation'],
+            agent=self.procurement_analyst(),
+            context=[self.analyze_suppliers()],
+            output_file='data/recommendation.md'
+        )
+
+    def _scrape_products(self, task_output: str) -> str:
+        """
+        Callback function to handle product scraping.
+        
+        Args:
+            task_output: The output from the previous task
+            
+        Returns:
+            str: Status message about the scraping operation
+        """
+        try:
+            # Extract product information from the task output
+            # This is a simplified example - you might want to parse the output more carefully
+            product = task_output.split("product: ")[1].split("\n")[0].strip()
+
+            # Scrape data from all configured stores
+            df = self.scraper.scrape_all_stores(product)
+
+            if df.empty:
+                return "No products found. Please try a different search term."
+
+            return f"Successfully scraped {len(df)} products. Proceed with analysis."
+
+        except Exception as e:
+            return f"Error during scraping: {str(e)}"
 
     @crew
     def crew(self) -> Crew:
